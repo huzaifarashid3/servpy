@@ -120,6 +120,13 @@ def start_microservice(folder: str):
     client = docker.from_env()
     image_tag = f"microservice_{folder.lower()}"
     try:
+        # Remove existing container with the same name if it exists
+        try:
+            existing = client.containers.get(f"ms_{folder}")
+            existing.stop()
+            existing.remove()
+        except docker.errors.NotFound:
+            pass
         # Build image
         image, _ = client.images.build(path=ms_dir, tag=image_tag)
         # Run container

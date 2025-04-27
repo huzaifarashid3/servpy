@@ -20,3 +20,8 @@ def login(req: LoginRequest):
 @app.get("/")
 def root():
     return {"message": "Demo login microservice is running!"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
