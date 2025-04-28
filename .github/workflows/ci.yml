@@ -31,6 +31,8 @@ jobs:
           npm install || true
       # Placeholder for tests
       - name: Run backend tests
-        run: echo "No backend tests yet"
+        run: |
+          cd backend
+          python -m pytest
       - name: Run frontend tests
         run: echo "No frontend tests yet"
