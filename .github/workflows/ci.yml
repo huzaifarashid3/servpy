@@ -38,3 +38,27 @@ jobs:
         run: |
           cd frontend
           npm test -- --watchAll=false
+
+      - name: Build backend Docker image
+        run: docker build -t hackops-backend ./backend
+      - name: Build frontend Docker image
+        run: docker build -t hackops-frontend ./frontend
+
+      - name: Docker Compose up
+        run: docker-compose up -d --build
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Run integration tests
+        run: python backend/tests/integration_test.py
+
+      - name: Docker Compose down
+        run: docker-compose down
