@@ -35,4 +35,6 @@ jobs:
           cd backend
           python -m pytest
       - name: Run frontend tests
-        run: echo "No frontend tests yet"
+        run: |
+          cd frontend
+          npm test -- --watchAll=false
