@@ -14,6 +14,7 @@ function ApiTester({ port, onClose }) {
     setLoading(true);
     setError("");
     setResponse(null);
+    console.log(`http://localhost:${port}${path}`)
     try {
       const res = await fetch(`http://localhost:${port}${path}`, {
         method,
