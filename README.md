@@ -1,23 +1,135 @@
 # HackOps: Microservice Sharing Platform
 
 ## Overview
-A DevOps-focused web app for uploading, sharing, and running reusable microservices (e.g., login, auth, etc.).
-
-### Structure
-- `backend/` — Python FastAPI backend
-- `frontend/` — React frontend
-- `.github/workflows/` — CI/CD pipelines
-- `docker-compose.yml` — Dev & deployment orchestration
-
-## Getting Started
-1. Clone the repo
-2. See `backend/` and `frontend/` for setup
-3. Use `docker-compose up` to run all services
-
-## DevOps Practices
-- Dockerized services
-- CI/CD with GitHub Actions
-- Linting, testing, and deployment pipelines
-- Infrastructure as code
+HackOps is a DevOps-focused web platform for uploading, sharing, running, and testing reusable microservices. Users can upload microservices (e.g., login, random number generator), run them in isolated Docker containers, and test their API endpoints—all from a modern web UI. The project demonstrates best practices in DevOps, CI/CD, containerization, monitoring, and automation.
 
 ---
+
+## Features
+- **Upload Microservices:** Upload code (Dockerfile, app.py, requirements.txt) for reusable microservices.
+- **Run in Docker:** Start/stop uploaded microservices in isolated Docker containers from the web UI.
+- **API Testing:** Test endpoints of running microservices directly from the frontend.
+- **Download Files:** Download individual files from any uploaded microservice.
+- **List & Manage:** View all uploaded microservices, see their status, and manage them.
+- **Monitoring:** Prometheus and Grafana included for monitoring and observability.
+- **CI/CD:** Automated testing, building, and deployment using GitHub Actions and Amazon ECR.
+
+---
+
+## Project Structure
+```
+served/
+├── backend/           # FastAPI backend (microservice management, Docker control)
+├── frontend/          # React frontend (UI, API tester)
+├── uploads/           # Uploaded microservices (each in its own folder)
+├── docker-compose.yml # Orchestrates all services
+├── prometheus.yml     # Prometheus config
+├── .github/workflows/ # CI/CD pipelines
+└── README.md
+```
+
+---
+
+## Local Setup & Usage
+
+### 1. Prerequisites
+- Docker & Docker Compose
+- Node.js (v20+) and npm (for local frontend dev)
+- Python 3.11+ (for local backend dev)
+
+### 2. Clone the Repository
+```sh
+git clone <your-repo-url>
+cd served
+```
+
+### 3. Run Everything with Docker Compose
+```sh
+docker-compose up --build
+```
+- Backend: http://localhost:8000
+- Frontend: http://localhost:3000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3001 (admin/admin)
+
+### 4. Manual Dev (Optional)
+- **Backend:**
+  ```sh
+  cd backend
+  python -m venv venv && source venv/bin/activate
+  pip install -r requirements.txt
+  uvicorn main:app --reload
+  ```
+- **Frontend:**
+  ```sh
+  cd frontend
+  npm install
+  npm run dev
+  ```
+
+---
+
+## CI/CD Pipeline (GitHub Actions)
+
+### 1. Continuous Integration
+- **Backend:**
+  - Installs dependencies
+  - Runs unit tests with pytest
+  - Runs integration tests (spins up services with Docker Compose and tests endpoints)
+- **Frontend:**
+  - Installs dependencies
+  - Runs React/Vitest tests
+- **Docker:**
+  - Builds backend and frontend Docker images to ensure Dockerfiles are valid
+
+### 2. Continuous Deployment
+- **Amazon ECR:**
+  - On every push to `main`, builds and tags Docker images for backend and frontend
+  - Pushes images to Amazon ECR (both `latest` and commit SHA tags)
+- **Secrets Required:**
+  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`
+  - `ECR_BACKEND_REPO`, `ECR_FRONTEND_REPO`
+
+### 3. Example Workflow Steps
+```
+- Checkout code
+- Set up Python & Node.js
+- Install backend/frontend dependencies
+- Run backend & frontend tests
+- Build Docker images
+- Run integration tests with Docker Compose
+- Push images to Amazon ECR
+```
+
+---
+
+## Monitoring & Observability
+- **Prometheus** scrapes metrics from services (add `/metrics` endpoints as needed)
+- **Grafana** for dashboards and visualization (default login: admin/admin)
+
+---
+
+## Example Microservices
+- **Login Service:** `/uploads/demo_login_20250427/`
+- **Random Number Generator:** `/uploads/random_number_20250427/`
+
+---
+
+## DevOps Best Practices Demonstrated
+- Dockerized microservices and platform
+- Automated CI/CD with GitHub Actions
+- Integration and unit testing
+- Infrastructure as code (Docker Compose)
+- Monitoring with Prometheus & Grafana
+- Secure, automated image deployment to ECR
+
+---
+
+## Authors & Credits
+- Team HackOps
+- Built for DevOps Hackathon 2025
+
+---
+
+## License
+MIT
