@@ -16,3 +16,4 @@ python-multipart
 pytest
 httpx
 requests
+prometheus_client

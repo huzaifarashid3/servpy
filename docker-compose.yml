@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build: ./backend
@@ -5,9 +7,13 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow backend to control Docker
     environment:
       - ENV=dev
-    user: "${UID}:${GID}"
+    depends_on:
+      - prometheus
+      - grafana
+
   frontend:
     build: ./frontend
     ports:
@@ -16,4 +22,23 @@ services:
       - ./frontend:/app
     environment:
       - ENV=dev
-    user: "${UID}:${GID}"
+    depends_on:
+      - backend
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus

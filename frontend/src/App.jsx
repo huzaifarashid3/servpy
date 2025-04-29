@@ -46,6 +46,24 @@ function App() {
       >
         View Uploaded Microservices
       </button>
+      <button
+        className="nav-btn"
+        onClick={() => setPage("grafana")}
+      >
+        View Metrics Dashboard
+      </button>
+      {page === "grafana" && (
+        <div>
+          <button onClick={() => setPage("upload")}>Back</button>
+          <iframe
+            src="http://localhost:3000/d/your-dashboard-id/your-dashboard-name?orgId=1&refresh=5s"
+            width="100%"
+            height="800"
+            frameBorder="0"
+            title="Grafana Dashboard"
+          ></iframe>
+        </div>
+      )}
       <h1>Upload Microservice</h1>
       <form onSubmit={handleSubmit}>
         <input
