@@ -7,8 +7,8 @@ import os
 import json
 import socket
 import docker
-from prometheus_client import start_http_server, Counter, Gauge
 import threading
+from prometheus_client import start_http_server, Counter, Gauge
 
 app = FastAPI()
 
@@ -36,21 +36,6 @@ cpu_usage_gauge = Gauge("cpu_usage_percent", "CPU usage percentage")
 # Start Prometheus metrics server
 threading.Thread(target=start_http_server, args=(8001,), daemon=True).start()
 
-@app.middleware("http")
-async def prometheus_metrics_middleware(request, call_next):
-    import time
-    start_time = time.time()
-    response = await call_next(request)
-    process = os.getpid()
-    memory_usage = os.popen(f"ps -o rss= -p {process}").read().strip()
-    cpu_usage = os.popen(f"ps -o %cpu= -p {process}").read().strip()
-
-    request_counter.inc()
-    response_time_gauge.set(time.time() - start_time)
-    memory_usage_gauge.set(int(memory_usage) * 1024)  # Convert KB to bytes
-    cpu_usage_gauge.set(float(cpu_usage))
-
-    return response
 
 def get_available_port():
     """Find an available port."""
@@ -68,7 +53,7 @@ def read_root():
 async def upload_microservice(
     name: str = Form(...),
     description: str = Form(...),
-    files: List[UploadFile] = File(...)
+    files: List[UploadFile] = File(...),
 ):
     """Upload a new microservice with files."""
     try:
@@ -87,17 +72,16 @@ async def upload_microservice(
         with open(os.path.join(ms_dir, "metadata.json"), "w") as meta_file:
             json.dump(metadata, meta_file)
 
-        return JSONResponse({
-            "status": "success",
-            "microservice": name,
-            "description": description,
-            "files": saved_files
-        })
-    except Exception as e:
         return JSONResponse(
-            {"status": "error", "detail": str(e)},
-            status_code=500
+            {
+                "status": "success",
+                "microservice": name,
+                "description": description,
+                "files": saved_files,
+            }
         )
+    except Exception as e:
+        return JSONResponse({"status": "error", "detail": str(e)}, status_code=500)
 
 
 def get_microservice_metadata(ms_dir):
@@ -109,7 +93,7 @@ def get_microservice_metadata(ms_dir):
     return {
         "name": os.path.basename(ms_dir).rsplit("_", 1)[0],
         "description": "",
-        "files": [f for f in os.listdir(ms_dir) if f != "metadata.json"]
+        "files": [f for f in os.listdir(ms_dir) if f != "metadata.json"],
     }
 
 
@@ -167,7 +151,7 @@ def start_microservice(folder: str):
             detach=True,
             ports={"8000/tcp": port},
             name=container_name,
-            remove=True
+            remove=True,
         )
 
         running_containers[folder] = {"id": container.id, "port": port}
@@ -206,3 +190,29 @@ def stop_microservice(folder: str):
 def status_microservices():
     """Return status of all running microservices."""
     return {"running": running_containers}
+
+
+@app.middleware("http")
+async def prometheus_metrics_middleware(request, call_next):
+    import time
+
+    start_time = time.time()
+    response = await call_next(request)
+    process = os.getpid()
+    memory_usage = os.popen(f"ps -o rss= -p {process}").read().strip()
+    cpu_usage = os.popen(f"ps -o %cpu= -p {process}").read().strip()
+
+    request_counter.inc()
+    response_time_gauge.set(time.time() - start_time)
+    try:
+        memory_usage_gauge.set(
+            int(memory_usage) * 1024 if memory_usage.isdigit() else 0
+        )
+    except Exception:
+        memory_usage_gauge.set(0)
+    try:
+        cpu_usage_gauge.set(float(cpu_usage) if cpu_usage else 0)
+    except Exception:
+        cpu_usage_gauge.set(0)
+
+    return response

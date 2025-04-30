@@ -1,0 +1,48 @@
+name: Deploy to AWS ECS with Copilot
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS Copilot CLI
+        run: |
+          curl -Lo copilot https://github.com/aws/copilot-cli/releases/latest/download/copilot-linux
+          chmod +x copilot
+          sudo mv copilot /usr/local/bin/copilot
+          copilot --help
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend Docker image
+        run: |
+          docker build -t ${{ secrets.ECR_BACKEND_REPO }}:latest ./backend
+          docker tag ${{ secrets.ECR_BACKEND_REPO }}:latest ${{ secrets.ECR_BACKEND_REPO }}:${{ github.sha }}
+          docker push ${{ secrets.ECR_BACKEND_REPO }}:latest
+          docker push ${{ secrets.ECR_BACKEND_REPO }}:${{ github.sha }}
+
+      - name: Build and push frontend Docker image
+        run: |
+          docker build -t ${{ secrets.ECR_FRONTEND_REPO }}:latest ./frontend
+          docker tag ${{ secrets.ECR_FRONTEND_REPO }}:latest ${{ secrets.ECR_FRONTEND_REPO }}:${{ github.sha }}
+          docker push ${{ secrets.ECR_FRONTEND_REPO }}:latest
+          docker push ${{ secrets.ECR_FRONTEND_REPO }}:${{ github.sha }}
+
+      - name: Deploy to AWS ECS with Copilot
+        run: |
+          copilot deploy --yes
