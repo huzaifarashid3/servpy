@@ -103,6 +103,54 @@ docker-compose up --build
 
 ---
 
+## Continuous Deployment with AWS Copilot
+
+### Copilot & AWS ECS Structure
+- **Copilot Directory:** All Copilot configuration is stored in the `copilot/` folder. Each service (backend, frontend, grafana, prometheus) and environment (e.g., dev) has its own `manifest.yml`.
+- **Services:**
+  - `frontend`: Load Balanced Web Service (public)
+  - `backend`: Load Balanced Web Service (public or private)
+  - `grafana`: Load Balanced Web Service (public)
+  - `prometheus`: Backend Service (private)
+- **Environments:**
+  - `dev`: Default environment for development and testing
+
+### Deployment Flow
+1. **Build & Push Images:**
+   - GitHub Actions builds Docker images for backend and frontend and pushes them to Amazon ECR (tagged as `latest` and with the commit SHA).
+2. **Copilot Deploy:**
+   - The workflow runs `copilot deploy --yes` to update all ECS services with the latest images and configuration.
+3. **AWS ECS Structure:**
+   - Each service runs as an ECS service in the Copilot-managed cluster.
+   - Load balancers are automatically created for public services (frontend, backend, grafana).
+   - Prometheus runs as a private backend service for internal monitoring.
+   - Networking, IAM, and scaling are managed by Copilot.
+
+### How to Access
+- **Frontend:** Public URL provided by Copilot/ALB
+- **Backend:** Public or internal URL (depending on manifest)
+- **Grafana:** Public URL (secured by password)
+- **Prometheus:** Internal URL (for monitoring only)
+
+### Copilot Directory Example
+```
+copilot/
+├── backend/manifest.yml
+├── frontend/manifest.yml
+├── grafana/manifest.yml
+├── prometheus/manifest.yml
+└── environments/
+    └── dev/manifest.yml
+```
+
+### GitHub Actions Workflow
+- On every push to `main`, the workflow:
+  1. Builds and pushes Docker images to ECR
+  2. Runs `copilot deploy --yes` to update ECS services
+- AWS credentials and ECR repo URLs are managed via GitHub secrets
+
+---
+
 ## Monitoring & Observability
 - **Prometheus** scrapes metrics from services (add `/metrics` endpoints as needed)
 - **Grafana** for dashboards and visualization (default login: admin/admin)
